@@ -236,8 +236,8 @@ takeDamage(attacker, percent, finalDamageModificator) {
           strength: 5,
           stamina: 7,
           wisdom: 15,
-          passion: 2
-          
+          passion: 2,
+          finalDamageModificator: 0
         },
         level
       });
