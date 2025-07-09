@@ -343,19 +343,24 @@ takeDamage(attacker, percent = 1) {
      
     }
     s2() {}
+
     p1(isCrit) {
       
       //make mdifier depend on skill level
       const mod = 4
       if(isCrit && this.passiveCritDMGBuff < 20) {
         this.passiveCritDMGBuff += mod
-        
+        this.critDamage += mod
       }
-    //  else { this.passiveCritDMGBuff - mod < 0 ? this.passiveCritDMGBuff = 0 : this.passiveCritDMGBuff - mod  }
-
-      this.critDamage += this.passiveCritDMGBuff
-      
+      else { 
+           this.passiveCritDMGBuff -= mod
+           this.critDamage -= mod
+       }
+     
       console.log(this.critDamage, this.passiveCritDMGBuff)
+    }
+    p2() {
+      
     }
     ultimate() {}
   }
