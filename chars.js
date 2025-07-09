@@ -86,8 +86,8 @@
 
       this.baseStats = baseStats
       // this.strength += level * 0.1;
-      // this.stamina += level * 1.2;
-      // this.wisdom += level * 1.5;
+      // this.stamina += level * 0.1;
+      // this.wisdom += level * 0.1;
 
       this.classEssential = CORE_STATS[this.class.essentialStat];
       this.classUnique = element.uniqueStat;
@@ -127,7 +127,7 @@
 
       boosts.forEach((stat, i) => {
         if (!this[stat]) this[stat] = 0;
-        this[stat] += val * multipliers[i];  
+        this[stat] += val * multipliers[i];  // use corresponding multiplier
       });
 
       if (CORE_STATS[statName] === this.classEssential) {
@@ -148,36 +148,42 @@
 
 takeDamage(attacker, percent = 1) {
 
+  // accuracy
+
   const hitChance = attacker.accuracy - this.evasion;
   const random = Math.random() * 100;
+
+  //miss check
   if (random > hitChance) {
     return { missed: true, damage: 0 };
   }
 
+  // crit check
+
   const effectiveCritRate = Math.max(0, attacker.critRate - this.critResist);
   const isCrit = Math.random() * 1 < effectiveCritRate;
 
-
+ //atk percentage
   const scaledAttack = attacker.attack * percent;
 
+  // defense
   const baseDamage = scaledAttack / (this.defense * 0.02);
 
+  // crit calc
   let finalDamage = baseDamage;
   if (isCrit) {
     finalDamage *= attacker.critDamage / 10;
   }
 
-
   const damageTaken = Math.round(finalDamage);
   this.hp = Math.max(0, this.hp - damageTaken);
 
-
   return {
-    missed: false,
+  //  missed: false,
     isCrit,
     damage: damageTaken,
     remainingHP: this.hp,
-    baseDamage
+    name: this.name
   };
 }
 
@@ -201,6 +207,8 @@ takeDamage(attacker, percent = 1) {
     }
   }
 
+
+  //CHARACTER
 
   class Sonia extends BaseCharacter {
     constructor(level = 1) {
@@ -231,11 +239,11 @@ takeDamage(attacker, percent = 1) {
         level
       });
 
-      this.debuffTargets = []
-    }
+        this.debuffTargets = []
 
-    skillsInfo() {
-      const skill1 = {
+        this.passiveCritDMGBuff = 0
+
+        this.skill1 = {
         name: "Flames Arise",
         description: ` Sonia lets out a burst of fire magic provoking multipe fire burst to rise from beneath the enemies.`,
         level1: ` Deals 60% of Sonia's attack 4 times at enemies at random, inflicting Burning Heat for 2 turns. Burning Heat deals 2% of the enemy's max HP each turn.
@@ -243,19 +251,22 @@ takeDamage(attacker, percent = 1) {
                   Once an additional attack is triggered, the chance resets to 20%`,
         level2: ` The attack amount increases to 5`,
         level3: ` The skill damage is now equal to 80% of Sonia's attack and the chance of dealing an extra attack is now 25%`,
-        Evolution: ` Every multiplier of this ability is increased by 10% of its base value.`         
+        Evolution: ` Every multiplier of this ability is increased by 10% of its base value.`,     
+        cooldown: 0
       }
 
-      const skill2 = {
+        this.skill2 = {
         name: "Fire Ball",
         description: "Sonia shoots a flaming fire ball towards the enemies.",
         level1: ` This attack deals 160% of Sonia's attack to one random target. Additionaly, per each stack of Burning Heat, this skill has a 20% to recast.`,
         level2: ` Additionally, if the target is inflicted by Burning Heat, this attack enjoys +25% crit damage.`,
         level3: ` The chance of recasting this skill per Burning Heat stack becomes 33%`,
-        Evolution: ` Every multiplier of this ability is increased by 10% of its base value.`   
+        Evolution: ` Every multiplier of this ability is increased by 10% of its base value.`,
+        cooldown: 0
+
       }
 
-      const passive1 = {
+        this.passive1 = {
         name: "Intense Heat",
         description: "Sonia's passion for a thrilling battle strengthens her magic.",
         level1: "For each succesful crit, Sonia's damage incrase by 4%, up to 16%. If an attack doesnt crit, this damage bonus is reduced by 5%",
@@ -264,7 +275,7 @@ takeDamage(attacker, percent = 1) {
 
       }
 
-      const passive2 = {
+        this.passive2 = {
         name: "Growing Flame",
         description: "The longer the fight goes on, the hotter her flames become.",
         level1: `For each turn, increases her crit rate by 3%, and crit damage by 5%. Each time Sonia's takes damage, this buff is reduced by
@@ -273,37 +284,54 @@ takeDamage(attacker, percent = 1) {
         level3: `The decrease on her crit rate and crit damage respectively becomes 1.25% and 2%`
       }
 
-      const special = {
+        this. special = {
         name: "Inferno",
         description: "Sonia's focuses, gathering all her magic fire and channeling it onto one target.",
         level1: `Triggers every stack of Burning Heat and clears them. For every stack of Burning Heat triggered, Sonia deals an attack equal to 
                 50% of her attack to the enemy with the highest HP`,
         level2: `The damage is now equal to 60% of her attack`,
         level3: `Additionaly, for each stack of Burning Heat triggered, deals an extra attack equal to 1% of the target max HP x stacks triggered`
-      }
+        
     }
-    s1() {
 
+      
+    }
+      skillsInfo() {
+          //  return {skill1: this.skill1, skill2, passive1, passive2, special}
+      }
+
+    act() {
+
+        const skill1 = this.skill1
+
+        if(skill1.cooldown == 0) {
+          this.s1()
+          skill1.cooldown = 2
+         
+        } else {
+          this.triggerBurningHeat()
+          skill1.cooldown -= 1
+        }
+        
+    }
+    s1() {  
        this.debuffTargets = []
 
         for(let i=0; i<5; i++) {
-        
-          const randomInt = Math.floor(Math.random() * 3);
-         
-         
-
-          const target = enemies[randomInt]
-      //    console.log(target.takeDamage(sonia, 0.6))
+          setTimeout(() => { const randomInt = Math.floor(Math.random() * 3);
           
-          const effectiveDebuffAcc = sonia.debuffAccuracy - target.debuffResist
-          const applyDebuff = Math.random() * 10 < effectiveDebuffAcc;
+            const target = enemies[randomInt]
+           //console.log(target.takeDamage(sonia, 0.6))   
+            
+            const result = target.takeDamage(sonia, 0.6)
+            
+            this.p1(result.isCrit)
+            const effectiveDebuffAcc = sonia.debuffAccuracy - target.debuffResist
+            const applyDebuff = Math.random() * 10 < effectiveDebuffAcc;
 
-
-
-          if(applyDebuff && !this.debuffTargets.includes(target)) this.debuffTargets.push(target)
-          console.log(effectiveDebuffAcc)
-        }
-        console.log(this.debuffTargets+"dsgsdgsgsgsgsd")
+            if(applyDebuff && !this.debuffTargets.includes(target)) this.debuffTargets.push(target)}, i*2000)
+          
+          }      
     }
 
     triggerBurningHeat() {
@@ -315,10 +343,24 @@ takeDamage(attacker, percent = 1) {
      
     }
     s2() {}
-    p1() {}
+    p1(isCrit) {
+      
+      //make mdifier depend on skill level
+      const mod = 4
+      if(isCrit && this.passiveCritDMGBuff < 20) {
+        this.passiveCritDMGBuff += mod
+        
+      }
+    //  else { this.passiveCritDMGBuff - mod < 0 ? this.passiveCritDMGBuff = 0 : this.passiveCritDMGBuff - mod  }
+
+      this.critDamage += this.passiveCritDMGBuff
+      
+      console.log(this.critDamage, this.passiveCritDMGBuff)
+    }
     ultimate() {}
   }
 
+  //ENEMY
   
   class enemyTest extends BaseCharacter {
     constructor(level = 1) {
@@ -347,7 +389,16 @@ takeDamage(attacker, percent = 1) {
         },
         level
       });
+
     }
+    
+    act() {
+      this.basicAttack()
+    }
+
+      basicAttack() {
+        console.log(sonia.takeDamage(this, 0.8))
+      }
   }
 
   const dummy = new enemyTest()
@@ -368,8 +419,23 @@ takeDamage(attacker, percent = 1) {
   const a = sonia.getStats()
   const b = dummy.getStats()
 
-$(document).ready(function () {
 
+  function start() {
+      currentCharacters = [ sonia, dummy, dummy2, dummy3 ]
+      const sortBySpeed = currentCharacters.sort((a, b) => b.speed - a.speed);
 
+      console.log(sortBySpeed)
+
+   $.each(currentCharacters, function (i, character) {
+        setTimeout(() => {
+            character.act();
+        }, i * 2000); 
 });
+
+  }
+
+
+
+//TURNS
+
 
