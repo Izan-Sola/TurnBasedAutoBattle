@@ -127,7 +127,7 @@
 
       boosts.forEach((stat, i) => {
         if (!this[stat]) this[stat] = 0;
-        this[stat] += val * multipliers[i];  // use corresponding multiplier
+        this[stat] += val * multipliers[i];  
       });
 
       if (CORE_STATS[statName] === this.classEssential) {
@@ -147,34 +147,31 @@
   }
 
 takeDamage(attacker, percent = 1) {
-  // Step 1: Accuracy check
+
   const hitChance = attacker.accuracy - this.evasion;
   const random = Math.random() * 100;
   if (random > hitChance) {
     return { missed: true, damage: 0 };
   }
 
-  // Step 2: Crit check
   const effectiveCritRate = Math.max(0, attacker.critRate - this.critResist);
   const isCrit = Math.random() * 1 < effectiveCritRate;
 
-  // Step 3: Apply percent to base attack
+
   const scaledAttack = attacker.attack * percent;
 
-  // Step 4: Base damage formula
   const baseDamage = scaledAttack / (this.defense * 0.02);
 
-  // Step 5: Crit multiplier
   let finalDamage = baseDamage;
   if (isCrit) {
     finalDamage *= attacker.critDamage / 10;
   }
 
-  // Step 6: Round and apply
+
   const damageTaken = Math.round(finalDamage);
   this.hp = Math.max(0, this.hp - damageTaken);
 
-  // Step 7: Return full damage log
+
   return {
     missed: false,
     isCrit,
