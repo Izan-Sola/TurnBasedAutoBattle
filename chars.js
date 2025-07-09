@@ -146,7 +146,10 @@
     });
   }
 
-takeDamage(attacker, percent = 1) {
+  //finalDamageModificator: It referes to a percentage between -100% and +infinite% that will change the final damage,
+  //there will be a variable for all characters with this name, which value will vary depending on self buff, ally buffs, and enemy debuffs
+  //to handle % damage modifications
+takeDamage(attacker, percent, finalDamageModificator) {
 
   // accuracy
 
@@ -269,7 +272,7 @@ takeDamage(attacker, percent = 1) {
         this.passive1 = {
         name: "Intense Heat",
         description: "Sonia's passion for a thrilling battle strengthens her magic.",
-        level1: "For each succesful crit, Sonia's damage incrase by 4%, up to 16%. If an attack doesnt crit, this damage bonus is reduced by 5%",
+        level1: "For each succesful crit, Sonia's damage increases by 4%, up to 16%. If an attack doesnt crit, this damage bonus is reduced by 5%",
         level2: "The damage increase is now 5%, up to 20%.",
         level3: "The reduction of the damage bonus after missing a crit is now 4%"
 
@@ -344,23 +347,23 @@ takeDamage(attacker, percent = 1) {
     }
     s2() {}
 
-    p1(isCrit) {
+    // p1(isCrit) {
       
-      //make mdifier depend on skill level
-      const mod = 4
-      if(isCrit && this.passiveCritDMGBuff < 20) {
-        this.passiveCritDMGBuff += mod
-        this.critDamage += mod
-      }
-      else { 
-           this.passiveCritDMGBuff -= mod
-           this.critDamage -= mod
-       }
+    //   //make mdifier depend on skill level
+    //   const mod = 4
+    //   if(isCrit && this.passiveCritDMGBuff < 20) {
+    //     this.passiveCritDMGBuff += mod
+    //     this.critDamage += mod
+    //   }
+    //   else { 
+    //        this.passiveCritDMGBuff -= mod
+    //        this.critDamage -= mod
+    //    }
      
-      console.log(this.critDamage, this.passiveCritDMGBuff)
-    }
+    //   console.log(this.critDamage, this.passiveCritDMGBuff)
+    // }
     p2() {
-      
+
     }
     ultimate() {}
   }
