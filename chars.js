@@ -244,7 +244,7 @@ takeDamage(attacker, percent, finalDamageModificator) {
 
         this.debuffTargets = []
 
-        this.passiveCritDMGBuff = 0
+        this.passiveDMGBuff = 0
 
         this.skill1 = {
         name: "Flames Arise",
@@ -347,21 +347,23 @@ takeDamage(attacker, percent, finalDamageModificator) {
     }
     s2() {}
 
-    // p1(isCrit) {
+     p1(isCrit) {
       
-    //   //make mdifier depend on skill level
-    //   const mod = 4
-    //   if(isCrit && this.passiveCritDMGBuff < 20) {
-    //     this.passiveCritDMGBuff += mod
-    //     this.critDamage += mod
-    //   }
-    //   else { 
-    //        this.passiveCritDMGBuff -= mod
-    //        this.critDamage -= mod
-    //    }
-     
-    //   console.log(this.critDamage, this.passiveCritDMGBuff)
-    // }
+    //make incr/decr depend on skill level
+         const increase = 4
+         const decrease = 4
+
+         if(isCrit && this.passiveDMGBuff < 20) {
+
+   this.finalDMGBuff += increase
+   this.finalDamageModificator += increase
+      }
+       else { 
+             this.finalDMGBuff -= decrease
+             this.finalDamageModificator -= decrease
+         }
+         console.log(this.finalDMGBuff, this.finalDamageModificator
+    }
     p2() {
 
     }
