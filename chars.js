@@ -8,7 +8,7 @@
     Strength: {
       id: "STRENGTH",
       boosts: ["accuracy", "critDamage"],
-      multiplier: [0.15, 0.15]
+      multiplier: [0.15, 0.001]
     },
     Stamina: {
       id: "STAMINA",
@@ -22,7 +22,7 @@
       id: 'FIRE',
       uniqueStat: 'Passion',
       boosts: ['critDamage', 'speed'],
-      multipliers: [0.1, 0.75],
+      multipliers: [0.001, 0.75],
       damageBonusAgainst: { EARTH: 0.1 }
     },
     Air: {
@@ -120,20 +120,14 @@
   applyStatBoosts() {
     for (const statName in CORE_STATS) {
       const val = this[statName.toLowerCase()];
-      if (!val) continue;
 
       const boosts = CORE_STATS[statName].boosts;
       const multipliers = CORE_STATS[statName].multiplier;
 
-      boosts.forEach((stat, i) => {
-        if (!this[stat]) this[stat] = 0;
-        this[stat] += val * multipliers[i];  // use corresponding multiplier
-      });
+      boosts.forEach((stat, i) => { this[stat] += val * multipliers[i]; });
 
-      if (CORE_STATS[statName] === this.classEssential) {
-        if (!this.attack) this.attack = 0;
-        this.attack += val;
-      }
+      if (CORE_STATS[statName] === this.classEssential) this.attack += val;
+      
     }
 
     // Apply element unique stat boosts
@@ -150,19 +144,15 @@
   //there will be a variable for all characters with this name, which value will vary depending on self buff, ally buffs, and enemy debuffs
   //to handle % damage modifications
 takeDamage(attacker, percent, finalDamageModificator) {
-
   // accuracy
-
   const hitChance = attacker.accuracy - this.evasion;
   const random = Math.random() * 100;
-
   //miss check
   if (random > hitChance) {
-    return { missed: true, damage: 0 };
+    return { missed: true, damage: 0, attacker, name: this.name };
   }
 
   // crit check
-
   const effectiveCritRate = Math.max(0, attacker.critRate - this.critResist);
   const isCrit = Math.random() * 1 < effectiveCritRate;
 
@@ -174,19 +164,19 @@ takeDamage(attacker, percent, finalDamageModificator) {
 
   // crit calc
   let finalDamage = baseDamage;
-  if (isCrit) {
-    finalDamage *= attacker.critDamage / 10;
-  }
+  if (isCrit) finalDamage = finalDamage * this.critDamage
 
+  finalDamage += finalDamage * (finalDamageModificator/100)
   const damageTaken = Math.round(finalDamage);
   this.hp = Math.max(0, this.hp - damageTaken);
 
   return {
-  //  missed: false,
+    missed: false,
     isCrit,
     damage: damageTaken,
     remainingHP: this.hp,
-    name: this.name
+    name: this.name,
+    attacker
   };
 }
 
@@ -231,19 +221,18 @@ takeDamage(attacker, percent, finalDamageModificator) {
           evasion: 2,
           critRate: 0.5,
           critResist: 0.12,
-          critDamage: 15,
+          critDamage: 1.15,
           debuffAccuracy: 10,
           strength: 5,
           stamina: 7,
           wisdom: 15,
           passion: 2,
-          finalDamageModificator: 0
         },
         level
       });
 
         this.debuffTargets = []
-
+        this.finalDamageModificator = 0
         this.passiveDMGBuff = 0
 
         this.skill1 = {
@@ -293,11 +282,9 @@ takeDamage(attacker, percent, finalDamageModificator) {
         level1: `Triggers every stack of Burning Heat and clears them. For every stack of Burning Heat triggered, Sonia deals an attack equal to 
                 50% of her attack to the enemy with the highest HP`,
         level2: `The damage is now equal to 60% of her attack`,
-        level3: `Additionaly, for each stack of Burning Heat triggered, deals an extra attack equal to 1% of the target max HP x stacks triggered`
-        
+        level3: `Additionaly, for each stack of Burning Heat triggered, deals an extra attack equal to 1% of the target max HP x stacks triggered`      
     }
-
-      
+   
     }
       skillsInfo() {
           //  return {skill1: this.skill1, skill2, passive1, passive2, special}
@@ -321,19 +308,24 @@ takeDamage(attacker, percent, finalDamageModificator) {
        this.debuffTargets = []
 
         for(let i=0; i<5; i++) {
-          setTimeout(() => { const randomInt = Math.floor(Math.random() * 3);
+         const randomInt = Math.floor(Math.random() * 3);
           
             const target = enemies[randomInt]
-           //console.log(target.takeDamage(sonia, 0.6))   
             
-            const result = target.takeDamage(sonia, 0.6)
+            const result = target.takeDamage(sonia, 0.6, this.finalDamageModificator)
             
-            this.p1(result.isCrit)
+            //if not a missed hit, check if it is crit for passive 1 effects.
+            if(!result.missed) this.p1(result.isCrit)
+
+            //will move this somewhere else eventually, as a separate function
             const effectiveDebuffAcc = sonia.debuffAccuracy - target.debuffResist
             const applyDebuff = Math.random() * 10 < effectiveDebuffAcc;
 
-            if(applyDebuff && !this.debuffTargets.includes(target)) this.debuffTargets.push(target)}, i*2000)
-          
+            if(applyDebuff && !this.debuffTargets.includes(target)) this.debuffTargets.push(target)
+            
+      
+            console.log(result)
+            console.log(this.passiveDMGBuff, this.finalDamageModificator)
           }      
     }
 
@@ -353,16 +345,14 @@ takeDamage(attacker, percent, finalDamageModificator) {
          const increase = 4
          const decrease = 4
 
-         if(isCrit && this.passiveDMGBuff < 20) {
+         this.finalDamageModificator - this.passiveDMGBuff == 0 ? this.finalDamageModificator = 0 : this.finalDamageModificator -= this.passiveDMGBuff
 
-   this.finalDMGBuff += increase
-   this.finalDamageModificator += increase
-      }
-       else { 
-             this.finalDMGBuff -= decrease
-             this.finalDamageModificator -= decrease
-         }
-         console.log(this.finalDMGBuff, this.finalDamageModificator
+         if(isCrit && this.passiveDMGBuff < 20) (this.passiveDMGBuff + increase > 20) ? this.passiveDMGBuff = 20 : this.passiveDMGBuff += increase
+         else if (!isCrit && this.passiveDMGBuff >= 0) this.passiveDMGBuff - decrease < 0 ? this.passiveDMGBuff = 0 : this.passiveDMGBuff -= decrease
+         
+
+         this.finalDamageModificator += this.passiveDMGBuff
+     
     }
     p2() {
 
@@ -389,7 +379,7 @@ takeDamage(attacker, percent, finalDamageModificator) {
           accuracy: 60,
           evasion: 2,
           critRate: 0.5,
-          critDamage: 15,
+          critDamage: 1.10,
           critResist: 0.12,
           debuffResist: 4,
           strength: 5,
@@ -399,7 +389,7 @@ takeDamage(attacker, percent, finalDamageModificator) {
         },
         level
       });
-
+      this.finalDamageModificator = 0
     }
     
     act() {
@@ -407,7 +397,7 @@ takeDamage(attacker, percent, finalDamageModificator) {
     }
 
       basicAttack() {
-        console.log(sonia.takeDamage(this, 0.8))
+        console.log(sonia.takeDamage(this, 0.8, this.finalDamageModificator))
       }
   }
 
@@ -439,7 +429,7 @@ takeDamage(attacker, percent, finalDamageModificator) {
    $.each(currentCharacters, function (i, character) {
         setTimeout(() => {
             character.act();
-        }, i * 2000); 
+        }, i * 1000); 
 });
 
   }
@@ -447,5 +437,4 @@ takeDamage(attacker, percent, finalDamageModificator) {
 
 
 //TURNS
-
 
