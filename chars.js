@@ -146,7 +146,7 @@ class BaseCharacter {
       level: this.level,
       exp: this.exp,
       expToNextLevel: this.expToNextLevel,
-      hp: this.hp,
+      hp: this.baseHP,
       attack: this.attack,
       defense: this.defense,
       speed: this.speed,
@@ -213,7 +213,7 @@ class Sonia extends BaseCharacter {
       name: "Fire Ball",
       description: "Sonia shoots a flaming fire ball towards the enemies.",
       level1: ` This attack deals 160% of Sonia's attack to one random target. Additionaly, per each stack of Burning Heat, this skill has a 20% to recast.`,
-      level2: ` Additionally, if the target is inflicted by Burning Heat, this attack enjoys +25% crit damage.`,
+      level2: ` Additionally, if the target is inflicted by Burning Heat, this attack enjoys +20% crit damage and accuracy.`,
       level3: ` The chance of recasting this skill per Burning Heat stack becomes 33%`,
       Evolution: ` Every multiplier of this ability is increased by 10% of its base value.`,
       cooldown: 0
@@ -255,6 +255,7 @@ class Sonia extends BaseCharacter {
   act() {
 
     const skill1 = this.skill1
+    const skill2 = this.skill2
 
     if (skill1.cooldown == 0) {
       this.s1()
@@ -262,9 +263,16 @@ class Sonia extends BaseCharacter {
 
     } else {
       this.triggerBurningHeat()
+
+      if(skill2.cooldown != 0) skill2.cooldown -= 1
+      else {
+            this.s2()
+            skill2.cooldown = 2
+      }
+      
       skill1.cooldown -= 1
     }
-
+    console.log("SKILL1 CD", skill1.cooldown, "SKILL2 CD", skill2.cooldown)
   }
   s1() {
     this.debuffTargets = []
@@ -276,8 +284,7 @@ class Sonia extends BaseCharacter {
         const target = enemies[randomInt]
 
 
-        const result =
-          calculateDamage(sonia, target, 0.6)
+        const result = calculateDamage(sonia, target, 0.6)
 
         //if not a missed hit, check if it is crit for passive 1 effects.
         if (!result.missed) this.p1(result.isCrit)
@@ -289,7 +296,7 @@ class Sonia extends BaseCharacter {
         if (applyDebuff && !this.debuffTargets.includes(target)) this.debuffTargets.push(target)
 
         console.log(result)
-      }, i * 1000);
+      }, i * 200);
     }
   }
 
@@ -298,12 +305,30 @@ class Sonia extends BaseCharacter {
     this.debuffTargets.forEach(enemy => {
       const dmg = enemy.maxHP * 0.02
       enemy.currentHP -= dmg
-      console.log(enemy.currentHP)
+      console.log("BURN DEBUFF DAMAGE:", dmg, `(${enemy.currentHP})`)
       updateHPBar(enemy)
     });
 
   }
-  s2() { }
+  s2() { 
+      //make chance depend on skill level
+      const chance = 20
+      var recast = null;
+      var target = enemies[Math.round(Math.random() * (enemies.length - 1))]
+
+      const result = calculateDamage(sonia, target, 1.6)
+
+      const recastChance = chance * this.debuffTargets.length
+      if (!result.missed) this.p1(result.isCrit)
+      if(Math.random() * 100 < recastChance) {
+          target = enemies[Math.round(Math.random() * (enemies.length - 1))]
+          recast = calculateDamage(sonia, target, 1.6)
+          if (!result.missed) this.p1(recast.isCrit)
+          console.log("RECAST")
+      } 
+
+      console.log(result, recast)
+  }
 
   p1(isCrit) {
 
@@ -318,6 +343,7 @@ class Sonia extends BaseCharacter {
 
 
     this.finalDamageModificator += this.passiveDMGBuff
+    console.log("PASSIVE DMG BONUS:", this.passiveDMGBuff)
 
   }
   p2() {
@@ -407,7 +433,7 @@ function calculateDamage(attacker, target, percent) {
   const scaledAttack = attacker.attack * percent;
 
   // defense
-  const baseDamage = scaledAttack / (target.defense * 0.02);
+  const baseDamage = scaledAttack - (target.defense * 0.25);
 
   // crit calc
   let finalDamage = baseDamage;
@@ -438,30 +464,28 @@ function updateHPBar(target) {
 
 currentCharacters = [sonia, dummy, dummy2, dummy3]
 
-function test() {
-  $.each(currentCharacters, function (i, character) {
-    if (character.team == "ally") $('#team').append(`<div class="square" id=${character.name}> ${character.name} </div>`);
-    else $('#enemies').append(`<div class="square" id=${character.name}>  ${character.name} </div>`);
-  });
-}
+
 function start() {
 
   const sortBySpeed = currentCharacters.sort((a, b) => b.speed - a.speed);
 
   console.log(sortBySpeed)
-
-
   $.each(currentCharacters, function (i, character) {
-    setTimeout(() => {
-      character.act();
-    }, i * 2000);
-
+    if (character.team == "ally") $('#team').append(`<div class="square" id=${character.name}> ${character.name} </div>`);
+    else $('#enemies').append(`<div class="square" id=${character.name}>  ${character.name} </div>`);
   });
+
 
 }
 
-
-
-
-//TURNS
+function turns() {
+    $.each(currentCharacters, function (i, character) {
+    setTimeout(() => {
+      character.act();
+    }, i * 2000);
+  });
+    setTimeout(() => {
+    turns();
+  }, currentCharacters.length * 2000);
+ }
 
