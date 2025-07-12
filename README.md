@@ -1,1 +1,6 @@
-Recreating an automatic turn based fight with a complex ability set. For what? For fun and learning I guess. And who knows maybe something cool ends up coming from this.
+
+
+I dont know 
+
+https://github.com/user-attachments/assets/27709715-e93a-4398-b94b-ad67bbdc5d96
+
